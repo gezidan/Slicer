@@ -28,6 +28,8 @@
 // CTK includes
 #include <ctkConfirmExitDialog.h>
 #include <ctkSettingsDialog.h>
+#include <ctkVTKMagnifyWidget.h>
+#include <ctkVTKSliceView.h>
 
 // SlicerQt includes
 #include "qSlicerMainWindow.h"
@@ -45,6 +47,9 @@
 #include "qSlicerSettingsModulesPanel.h"
 #include "qSlicerSettingsGeneralPanel.h"
 #include "qSlicerSettingsPythonPanel.h"
+
+// qMRML includes
+#include <qMRMLSliceWidget.h>
 
 // MRMLLogic includes
 #include <vtkMRMLSliceLogic.h>
@@ -222,7 +227,20 @@ void qSlicerMainWindowPrivate::setupUi(QMainWindow * mainWindow)
                    SIGNAL(sceneViewButtonClicked()),
                    qSlicerApplication::application()->ioManager(),
                    SLOT(openSceneViewsDialog()));
-  
+
+  // Connect the magnify widget to the MRMLThreeDViewsControllerWidget to
+  // toggle between navigation (3D) and magnification (2D) modes depending
+  // on whether the mouse is within an observed QVTKWidget (i.e. within a
+  // ctkVTKSliceView).
+  ctkVTKMagnifyWidget * magnifyWidget
+      = this->MRMLThreeDViewsControllerWidget->magnifyWidget();
+  QObject::connect(magnifyWidget, SIGNAL(enteredObservedWidget(QVTKWidget*)),
+                   this->MRMLThreeDViewsControllerWidget,
+                   SLOT(setDisplayModeToMagnification()));
+  QObject::connect(magnifyWidget, SIGNAL(leftObservedWidget(QVTKWidget*)),
+                   this->MRMLThreeDViewsControllerWidget,
+                   SLOT(setDisplayModeToNavigation()));
+
   //----------------------------------------------------------------------------
   // View Toolbar
   //----------------------------------------------------------------------------
@@ -571,11 +589,34 @@ void qSlicerMainWindow::onLayoutActionTriggered(QAction* action)
 void qSlicerMainWindow::onLayoutChanged(int layout)
 {
   Q_D(qSlicerMainWindow);
+
+  // Trigger the action associated with the new layout
   foreach(QAction* action, d->MenuLayout->actions())
     {
     if (action->data().toInt() == layout)
       {
       action->trigger();
+      }
+    }
+
+  // Connect any newly created qMRMLSliceWidgets to the magnify widget
+  ctkVTKMagnifyWidget * magnifyWidget
+      = d->MRMLThreeDViewsControllerWidget->magnifyWidget();
+  vtkMRMLScene * scene = qSlicerApplication::application()->mrmlScene();
+  int numNodes = scene->GetNumberOfNodesByClass("vtkMRMLSliceNode");
+  for (int i = 0; i < numNodes; i++ )
+    {
+    vtkMRMLNode * node = scene->GetNthNodeByClass(i, "vtkMRMLSliceNode");
+    vtkMRMLSliceNode * sliceNode = static_cast<vtkMRMLSliceNode *>(node);
+    Q_ASSERT(sliceNode);
+    qMRMLSliceWidget * sliceWidget
+        = d->LayoutManager->sliceWidget(sliceNode->GetLayoutName());
+    Q_ASSERT(sliceWidget);
+    QVTKWidget * VTKWidget = sliceWidget->sliceView()->VTKWidget();
+    Q_ASSERT(VTKWidget);
+    if (!magnifyWidget->isObserved(VTKWidget))
+      {
+      magnifyWidget->observe(VTKWidget);
       }
     }
 }
