@@ -375,6 +375,12 @@ void qMRMLThreeDViewsControllerWidgetPrivate::setAnimationMode(int newAnimationM
 }
 
 // --------------------------------------------------------------------------
+void qMRMLThreeDViewsControllerWidgetPrivate::setDisplayMode(DisplayMode newMode)
+{
+  this->StackedWidget->setCurrentIndex(newMode);
+}
+
+// --------------------------------------------------------------------------
 // qMRMLThreeDViewsControllerWidget methods
 
 // --------------------------------------------------------------------------
@@ -443,4 +449,25 @@ void qMRMLThreeDViewsControllerWidget::lookFromAxis(const ctkAxesWidget::Axis& a
   d->ActiveMRMLThreeDViewNode->InvokeEvent(
     vtkMRMLViewNode::LookFromAxisRequestedEvent,
     const_cast<void*>(reinterpret_cast<const void*>(&axis)));
+}
+
+// --------------------------------------------------------------------------
+ctkVTKMagnifyWidget * qMRMLThreeDViewsControllerWidget::magnifyWidget()
+{
+  Q_D(qMRMLThreeDViewsControllerWidget);
+  return d->VTKMagnify;
+}
+
+// --------------------------------------------------------------------------
+void qMRMLThreeDViewsControllerWidget::setDisplayModeToNavigation()
+{
+  Q_D(qMRMLThreeDViewsControllerWidget);
+  d->setDisplayMode(qMRMLThreeDViewsControllerWidgetPrivate::NavigationDisplayMode);
+}
+
+// --------------------------------------------------------------------------
+void qMRMLThreeDViewsControllerWidget::setDisplayModeToMagnification()
+{
+  Q_D(qMRMLThreeDViewsControllerWidget);
+  d->setDisplayMode(qMRMLThreeDViewsControllerWidgetPrivate::MagnificationDisplayMode);
 }
