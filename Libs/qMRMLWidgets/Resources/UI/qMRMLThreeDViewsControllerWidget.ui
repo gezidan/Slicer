@@ -318,7 +318,7 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <widget class="qMRMLNavigationView" name="MRMLNavigationView">
+      <widget class="qMRMLNavigationView" name="NavigationView">
        <property name="geometry">
         <rect>
          <x>0</x>
