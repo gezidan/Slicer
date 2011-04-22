@@ -490,7 +490,7 @@
  <customwidgets>
   <customwidget>
    <class>ctkVTKMagnifyWidget</class>
-   <extends>QLabel</extends>
+   <extends>ctkCursorPixmapWidget</extends>
    <header>ctkVTKMagnifyWidget.h</header>
   </customwidget>
   <customwidget>
@@ -502,6 +502,11 @@
    <class>ctkAxesWidget</class>
    <extends>QWidget</extends>
    <header>ctkAxesWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ctkCursorPixmapWidget</class>
+   <extends>QLabel</extends>
+   <header>ctkCursorPixmapWidget.h</header>
   </customwidget>
   <customwidget>
    <class>qMRMLNavigationView</class>
