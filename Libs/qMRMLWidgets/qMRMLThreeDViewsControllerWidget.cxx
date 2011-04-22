@@ -177,6 +177,9 @@ void qMRMLThreeDViewsControllerWidgetPrivate::setupUi(qMRMLWidget* widget)
   this->AnimateViewButtonGroup->addButton(this->RockButton);
   connect(this->SpinButton, SIGNAL(toggled(bool)), SLOT(onSpinViewButtonToggled(bool)));
   connect(this->RockButton, SIGNAL(toggled(bool)), SLOT(onRockViewButtonToggled(bool)));
+
+  // Navigation and magnification widgets
+  this->setDisplayMode(NavigationDisplayMode);
 }
 
 // --------------------------------------------------------------------------
