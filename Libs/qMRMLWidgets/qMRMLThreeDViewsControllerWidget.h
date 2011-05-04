@@ -26,7 +26,7 @@
 
 // CTK includes
 #include <ctkAxesWidget.h>
-class ctkVTKMagnifyWidget;
+class ctkVTKMagnifyView;
 
 // qMRMLWidget includes
 #include "qMRMLWidget.h"
@@ -49,7 +49,7 @@ public:
   virtual ~qMRMLThreeDViewsControllerWidget();
 
   /// Provide access to the magnify widget
-  ctkVTKMagnifyWidget * magnifyWidget();
+  ctkVTKMagnifyView * magnifyView();
 
 public slots:
 

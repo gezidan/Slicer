@@ -355,22 +355,22 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="ctkVTKMagnifyWidget" name="VTKMagnify">
+        <widget class="ctkVTKMagnifyView" name="VTKMagnify">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="cursorColor">
+         <property name="crosshairColor">
           <color>
            <red>255</red>
            <green>191</green>
            <blue>0</blue>
           </color>
          </property>
-         <property name="cursorType">
-          <set>ctkCursorPixmapWidget::BullsEyeCursor</set>
+         <property name="crosshairType">
+          <set>ctkCrosshairLabel::BullsEyeCrosshair</set>
          </property>
          <property name="marginColor">
           <color>
@@ -499,9 +499,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ctkVTKMagnifyWidget</class>
-   <extends>ctkCursorPixmapWidget</extends>
-   <header>ctkVTKMagnifyWidget.h</header>
+   <class>ctkVTKMagnifyView</class>
+   <extends>ctkCrosshairLabel</extends>
+   <header>ctkVTKMagnifyView.h</header>
   </customwidget>
   <customwidget>
    <class>ctkVTKRenderView</class>
@@ -514,9 +514,9 @@
    <header>ctkAxesWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>ctkCursorPixmapWidget</class>
+   <class>ctkCrosshairLabel</class>
    <extends>QLabel</extends>
-   <header>ctkCursorPixmapWidget.h</header>
+   <header>ctkCrosshairLabel.h</header>
   </customwidget>
   <customwidget>
    <class>qMRMLNavigationView</class>

@@ -28,7 +28,7 @@
 // CTK includes
 #include <ctkConfirmExitDialog.h>
 #include <ctkSettingsDialog.h>
-#include <ctkVTKMagnifyWidget.h>
+#include <ctkVTKMagnifyView.h>
 #include <ctkVTKSliceView.h>
 
 // SlicerQt includes
@@ -232,12 +232,12 @@ void qSlicerMainWindowPrivate::setupUi(QMainWindow * mainWindow)
   // toggle between navigation (3D) and magnification (2D) modes depending
   // on whether the mouse is within an observed QVTKWidget (i.e. within a
   // ctkVTKSliceView).
-  ctkVTKMagnifyWidget * magnifyWidget
-      = this->MRMLThreeDViewsControllerWidget->magnifyWidget();
-  QObject::connect(magnifyWidget, SIGNAL(enteredObservedWidget(QVTKWidget*)),
+  ctkVTKMagnifyView * magnifyView
+      = this->MRMLThreeDViewsControllerWidget->magnifyView();
+  QObject::connect(magnifyView, SIGNAL(enteredObservedWidget(QVTKWidget*)),
                    this->MRMLThreeDViewsControllerWidget,
                    SLOT(setDisplayModeToMagnification()));
-  QObject::connect(magnifyWidget, SIGNAL(leftObservedWidget(QVTKWidget*)),
+  QObject::connect(magnifyView, SIGNAL(leftObservedWidget(QVTKWidget*)),
                    this->MRMLThreeDViewsControllerWidget,
                    SLOT(setDisplayModeToNavigation()));
 
@@ -600,8 +600,8 @@ void qSlicerMainWindow::onLayoutChanged(int layout)
     }
 
   // Connect any newly created qMRMLSliceWidgets to the magnify widget
-  ctkVTKMagnifyWidget * magnifyWidget
-      = d->MRMLThreeDViewsControllerWidget->magnifyWidget();
+  ctkVTKMagnifyView * magnifyView
+      = d->MRMLThreeDViewsControllerWidget->magnifyView();
   vtkMRMLScene * scene = qSlicerApplication::application()->mrmlScene();
   int numNodes = scene->GetNumberOfNodesByClass("vtkMRMLSliceNode");
   for (int i = 0; i < numNodes; i++ )
@@ -614,9 +614,9 @@ void qSlicerMainWindow::onLayoutChanged(int layout)
     Q_ASSERT(sliceWidget);
     QVTKWidget * VTKWidget = sliceWidget->sliceView()->VTKWidget();
     Q_ASSERT(VTKWidget);
-    if (!magnifyWidget->isObserved(VTKWidget))
+    if (!magnifyView->isObserved(VTKWidget))
       {
-      magnifyWidget->observe(VTKWidget);
+      magnifyView->observe(VTKWidget);
       }
     }
 }

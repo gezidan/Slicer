@@ -455,7 +455,7 @@ void qMRMLThreeDViewsControllerWidget::lookFromAxis(const ctkAxesWidget::Axis& a
 }
 
 // --------------------------------------------------------------------------
-ctkVTKMagnifyWidget * qMRMLThreeDViewsControllerWidget::magnifyWidget()
+ctkVTKMagnifyView * qMRMLThreeDViewsControllerWidget::magnifyView()
 {
   Q_D(qMRMLThreeDViewsControllerWidget);
   return d->VTKMagnify;
