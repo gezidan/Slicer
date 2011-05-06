@@ -178,7 +178,14 @@ void qMRMLThreeDViewsControllerWidgetPrivate::setupUi(qMRMLWidget* widget)
   connect(this->SpinButton, SIGNAL(toggled(bool)), SLOT(onSpinViewButtonToggled(bool)));
   connect(this->RockButton, SIGNAL(toggled(bool)), SLOT(onRockViewButtonToggled(bool)));
 
-  // Navigation and magnification widgets
+  // Connect the magnify widget to the MRMLThreeDViewsControllerWidget to
+  // toggle between navigation (3D) and magnification (2D) modes depending
+  // on whether the mouse is within an observed QVTKWidget (i.e. within a
+  // ctkVTKSliceView).
+  connect(this->VTKMagnify, SIGNAL(enteredObservedWidget(QVTKWidget*)),
+          q, SLOT(setDisplayModeToMagnification()));
+  connect(this->VTKMagnify, SIGNAL(leftObservedWidget(QVTKWidget*)),
+          q, SLOT(setDisplayModeToNavigation()));
   this->setDisplayMode(NavigationDisplayMode);
 }
 

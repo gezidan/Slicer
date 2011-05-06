@@ -228,19 +228,6 @@ void qSlicerMainWindowPrivate::setupUi(QMainWindow * mainWindow)
                    qSlicerApplication::application()->ioManager(),
                    SLOT(openSceneViewsDialog()));
 
-  // Connect the magnify widget to the MRMLThreeDViewsControllerWidget to
-  // toggle between navigation (3D) and magnification (2D) modes depending
-  // on whether the mouse is within an observed QVTKWidget (i.e. within a
-  // ctkVTKSliceView).
-  ctkVTKMagnifyView * magnifyView
-      = this->MRMLThreeDViewsControllerWidget->magnifyView();
-  QObject::connect(magnifyView, SIGNAL(enteredObservedWidget(QVTKWidget*)),
-                   this->MRMLThreeDViewsControllerWidget,
-                   SLOT(setDisplayModeToMagnification()));
-  QObject::connect(magnifyView, SIGNAL(leftObservedWidget(QVTKWidget*)),
-                   this->MRMLThreeDViewsControllerWidget,
-                   SLOT(setDisplayModeToNavigation()));
-
   //----------------------------------------------------------------------------
   // View Toolbar
   //----------------------------------------------------------------------------
