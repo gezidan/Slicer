@@ -45,6 +45,7 @@ create_test_sourcelist(Tests ${KIT}CxxTests.cxx
   qMRMLSliceWidgetTest1.cxx
   qMRMLSliceWidgetTest2.cxx
   qMRMLTransformSlidersTest1.cxx
+  qMRMLThreeDViewsControllerWidgetTest1.cxx
   qMRMLThreeDViewTest1.cxx
   qMRMLTreeViewTest1.cxx
   qMRMLUtilsTest1.cxx
@@ -126,6 +127,7 @@ SCENE_TEST(  qMRMLSceneDisplayableModelTest2 vol_and_cube.mrml )
 SCENE_TEST( qMRMLSliceWidgetTest1 vol_and_cube.mrml)
 SCENE_TEST( qMRMLSliceWidgetTest2 fixed.nrrd)
 SIMPLE_TEST( qMRMLTransformSlidersTest1 )
+SIMPLE_TEST( qMRMLThreeDViewsControllerWidgetTest1 )
 SIMPLE_TEST( qMRMLThreeDViewTest1 )
 SCENE_TEST(  qMRMLTreeViewTest1 vol_and_cube.mrml )
 SIMPLE_TEST( qMRMLUtilsTest1 )
