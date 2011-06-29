@@ -48,7 +48,11 @@ public:
   virtual ~qSlicerSettingsRemoteDataPanel();
 
 protected slots:
+  void onEnableAsynchronousIOChanged(bool);
+  void onForceRedownloadChanged(bool);
   void onCacheDirectoryChanged(const QString& path);
+  void onCacheSizeLimitChanged(int);
+  void onCacheFreeBufferSizeChanged(int);
 
 protected:
   QScopedPointer<qSlicerSettingsRemoteDataPanelPrivate> d_ptr;

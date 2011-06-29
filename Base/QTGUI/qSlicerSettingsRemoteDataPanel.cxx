@@ -75,12 +75,28 @@ void qSlicerSettingsRemoteDataPanelPrivate::init()
   this->CacheDirectoryButton->setDirectory(QLatin1String(pathPtr));
 
   // Connect panel widgets with associated slots
+  QObject::connect(this->EnableAsynchronousIOCheckBox, SIGNAL(toggled(bool)),
+                   q, SLOT(onEnableAsynchronousIOChanged(bool)));
+  QObject::connect(this->ForceRedownloadCheckBox, SIGNAL(toggled(bool)),
+                   q, SLOT(onForceRedownloadChanged(bool)));
   QObject::connect(this->CacheDirectoryButton, SIGNAL(directoryChanged(const QString&)),
                    q, SLOT(onCacheDirectoryChanged(const QString&)));
+  QObject::connect(this->CacheSizeLimitSpinBox, SIGNAL(valueChanged(int)),
+                   q, SLOT(onCacheSizeLimitChanged(int)));
+  QObject::connect(this->CacheFreeBufferSizeSpinBox, SIGNAL(valueChanged(int)),
+                   q, SLOT(onCacheFreeBufferSizeChanged(int)));
 
   // Register settings with their corresponding widgets
+  q->registerProperty("RemoteData/EnableAsynchronousIO", this->EnableAsynchronousIOCheckBox,
+                      "checked", SIGNAL(toggled(bool)));
+  q->registerProperty("RemoteData/ForceRedownload", this->ForceRedownloadCheckBox,
+                      "checked", SIGNAL(toggled(bool)));
   q->registerProperty("RemoteData/CacheDirectory", this->CacheDirectoryButton,
                       "directory", SIGNAL(directoryChanged(const QString&)));
+  q->registerProperty("RemoteData/CacheSizeLimit", this->CacheSizeLimitSpinBox,
+                      "value", SIGNAL(valueChanged(int)));
+  q->registerProperty("RemoteData/CacheFreeBufferSize", this->CacheFreeBufferSizeSpinBox,
+                      "value", SIGNAL(valueChanged(int)));
 }
 
 // --------------------------------------------------------------------------
@@ -101,11 +117,31 @@ qSlicerSettingsRemoteDataPanel::~qSlicerSettingsRemoteDataPanel()
 }
 
 // --------------------------------------------------------------------------
+void qSlicerSettingsRemoteDataPanel::onEnableAsynchronousIOChanged(bool enable)
+{
+}
+
+// --------------------------------------------------------------------------
+void qSlicerSettingsRemoteDataPanel::onForceRedownloadChanged(bool force)
+{
+}
+
+// --------------------------------------------------------------------------
 void qSlicerSettingsRemoteDataPanel::onCacheDirectoryChanged(const QString& path)
 {
   Q_ASSERT(qSlicerApplication::application()->mrmlScene()->GetCacheManager());
   QByteArray bytes = path.toUtf8();
   char * pathPtr = bytes.data();
   qSlicerApplication::application()->mrmlScene()->GetCacheManager()->SetRemoteCacheDirectory(pathPtr);
+}
+
+// --------------------------------------------------------------------------
+void qSlicerSettingsRemoteDataPanel::onCacheSizeLimitChanged(int size)
+{
+}
+
+// --------------------------------------------------------------------------
+void qSlicerSettingsRemoteDataPanel::onCacheFreeBufferSizeChanged(int size)
+{
 }
 

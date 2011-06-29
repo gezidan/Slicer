@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>658</width>
-    <height>163</height>
+    <height>161</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,15 +17,77 @@
    <property name="fieldGrowthPolicy">
     <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
    </property>
-   <item row="1" column="0">
+   <item row="0" column="0">
+    <widget class="QLabel" name="EnableAsynchronousIOLabel">
+     <property name="text">
+      <string>Enable asynchronous I/O:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QCheckBox" name="EnableAsynchronousIOCheckBox">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="ForceRedownloadLabel">
+     <property name="text">
+      <string>Force re-download:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QCheckBox" name="ForceRedownloadCheckBox">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
     <widget class="QLabel" name="CacheDirectoryLabel">
      <property name="text">
       <string>Cache directory:</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="ctkDirectoryButton" name="CacheDirectoryButton" native="true"/>
+   <item row="3" column="1">
+    <widget class="ctkDirectoryButton" name="CacheDirectoryButton"/>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="CacheSizeLimitLabel">
+     <property name="text">
+      <string>Cache size limit:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="CacheFreeBufferSizeLabel">
+     <property name="text">
+      <string>Cache free buffer size:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QSpinBox" name="CacheSizeLimitSpinBox">
+     <property name="maximum">
+      <number>1000</number>
+     </property>
+     <property name="value">
+      <number>200</number>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QSpinBox" name="CacheFreeBufferSizeSpinBox">
+     <property name="maximum">
+      <number>900</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
