@@ -10,12 +10,12 @@ class SampleData:
   def __init__(self, parent):
     parent.title = "Sample Data"
     parent.category = "Informatics"
-    parent.contributor = "Steve Pieper"
+    parent.contributor = "Steve Pieper and Danielle Pace"
     parent.helpText = """
-The SampleData module can be used to download data for working with in slicer.  Use of this module requires an active network connection.
+The SampleData module can be used to download data for working with in slicer.  Use of this module requires an active network connection.  Sample data is downloaded from <a>http://www.slicer.org/slicerWiki/index.php/SampleData</a> into the cache directory specified in the application settings under Remote Data Settings.
     """
     parent.acknowledgementText = """
-This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. See <a>http://www.slicer.org</a> for details.  Module implemented by Steve Pieper.
+This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. See <a>http://www.slicer.org</a> for details.  Module implemented by Steve Pieper and Danielle Pace.
     """
     self.parent = parent
 
@@ -25,7 +25,6 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. Se
     # Trigger the menu to be added when application has started up
     qt.QTimer.singleShot(0, self.addMenu);
     
-
   def addMenu(self):
     i = qt.QIcon(':Icons/XLarge/SlicerDownloadMRHead.png')
     a = qt.QAction(i, 'Download Sample Data', slicer.util.mainWindow())
@@ -37,7 +36,6 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. Se
       for action in menuFile.actions():
         if action.text == 'Add Data':
           menuFile.insertAction(action,a)
-
 
   def select(self):
     m = slicer.util.mainWindow()
@@ -52,6 +50,21 @@ class SampleDataWidget:
 
   def __init__(self, parent=None):
     self.observerTags = []
+
+    # This wiki page has the table with all of the sample data and screenshots
+    self.sampleDataPage = "http://www.slicer.org/slicerWiki/index.php/SampleData"
+
+    # Handles the network connections
+    self.manager = qt.QNetworkAccessManager()
+    self.manager.connect('finished(QNetworkReply*)', self.onNetworkResult)
+    self.manager.connect('authenticationRequired(QNetworkReply*, QAuthenticator*)', self.onAuthenticationRequired)
+    self.manager.connect('proxyAuthenticationRequired(const QNetworkProxy&, QAuthenticator*)', self.onProxyAuthenticationRequired)
+
+    # Contains information on the sample data
+    self.sampleNames = []
+    self.sampleLinks = []
+    self.sampleIconLinks = {}
+    self.numSamples = 0
 
     if not parent:
       self.parent = slicer.qMRMLWidget()
@@ -74,46 +87,203 @@ class SampleDataWidget:
     pass
 
   def setup(self):
-    samples = (
-        ( 'MRHead', self.downloadMRHead ),
-        ( 'CTChest', self.downloadCTChest ),
-        ( 'CTACardio', self.downloadCTACardio ),
-        ( 'DTIBrain', self.downloadDTIBrain ),
-        ( 'MRBrainTumor1', self.downloadMRBrainTumor1 ),
-        ( 'MRBrainTumor2', self.downloadMRBrainTumor2 ),
-      )
-    for sample in samples:
-      b = qt.QPushButton('Download %s' % sample[0] )
-      self.layout.addWidget(b)
-      b.connect('clicked()', sample[1])
+    # Add combobox to select sample data to download
+    self.sampleComboBox = qt.QComboBox()
+    self.sampleComboBox.addItem('Select sample data to download...')
+    self.sampleComboBox.insertSeparator(1)
+    self.layout.addWidget(self.sampleComboBox)
+    self.sampleComboBox.connect('currentIndexChanged(int)', self.downloadVolume)
 
+    # Add refresh button
+    self.refreshButton = qt.QPushButton("Refresh")
+    self.layout.addWidget(self.refreshButton)
+    self.refreshButton.connect('clicked()', self.updateGUIFromWeb)
+
+    # Add status section
     self.log = qt.QTextEdit()
     self.layout.addWidget(self.log)
-    self.log.insertHtml('<p>Status: <i>Idle</i>\n')
-    self.log.insertPlainText('\n')
 
     # Add spacer to layout
     self.layout.addStretch(1)
 
-  def downloadMRHead(self):
-    self.downloadVolume('http://www.slicer.org/slicerWiki/images/4/43/MR-head.nrrd', 'MRHead')
+    # Fetch the sample data information and populate the sampleComboBox
+    self.updateGUIFromWeb()
 
-  def downloadCTChest(self):
-    self.downloadVolume('http://www.slicer.org/slicerWiki/images/3/31/CT-chest.nrrd', 'CTChest')
+  def updateGUIFromWeb(self):
+    self.log.insertHtml('<p>Status: <i>Retrieving sample data information from Slicer wiki</i>\n')
+    self.log.insertPlainText('\n')
 
-  def downloadCTACardio(self):
-    self.downloadVolume('http://www.slicer.org/slicerWiki/images/0/00/CTA-cardio.nrrd', 'CTACardio')
+    # Triggers call to onNetworkResult()
+    self.manager.get(qt.QNetworkRequest(qt.QUrl(self.sampleDataPage)))
 
-  def downloadDTIBrain(self):
-    self.downloadVolume('http://www.slicer.org/slicerWiki/images/0/01/DTI-Brain.nrrd', 'DTIBrain')
+  def onNetworkResult(self, reply):
+    # Error handling taken care of by the functions called here.
 
-  def downloadMRBrainTumor1(self):
-    self.downloadVolume('http://www.slicer.org/slicerWiki/images/5/59/RegLib_C01_1.nrrd', 'MRBrainTumor1')
+    if reply.url().toString() == self.sampleDataPage:
+      self.handleSampleDataInformation(reply)
+    else:
+      self.handleIcon(reply)
 
-  def downloadMRBrainTumor2(self):
-    self.downloadVolume('http://www.slicer.org/slicerWiki/images/e/e3/RegLib_C01_2.nrrd', 'MRBrainTumor2')
+  def handleSampleDataInformation(self, reply):
+    if self.networkReplyHasErrors("accessing Slicer wiki", reply):
+      return
 
-  def downloadVolume(self, uri, name):
+    # Get the wiki page
+    byteArray = reply.readAll()
+    if (byteArray.size() == 0):
+      self.reportError("accessing Slicer wiki", "error reading wiki page")
+      return
+
+    # Parse the table from the wiki page (there should only be one)
+    success = self.parseWikiPage(byteArray)
+    if not success:
+      return
+
+    # Clear the combobox and re-add the header and separator
+    self.sampleComboBox.clear()
+    self.sampleComboBox.addItem('Select sample data to download...')
+    self.sampleComboBox.insertSeparator(1)
+
+    # Add combobox to select sample data to download (starting with blank screenshot icons in case they cannot be downloaded)
+    for name in self.sampleNames:
+      self.sampleComboBox.addItem('Download %s' % name)
+
+    self.log.insertHtml('<p>Status: <i>Sample data information successfully retrieved</i>\n')
+    self.log.insertPlainText('\n')
+
+    # Trigger downloading the screenshots
+    for iconUrl in self.sampleIconLinks.keys():
+      self.manager.get(qt.QNetworkRequest(qt.QUrl(iconUrl)))
+
+    self.log.insertHtml('<p>Status: <i>Idle</i>\n')
+    self.log.insertPlainText('\n')
+
+  def parseWikiPage(self, byteArray):
+    # Extract the table
+    beginTableString = "<table"
+    endTableString = "/table>"
+    if (byteArray.count(beginTableString) != 1 or byteArray.count(endTableString) != 1):
+      self.reportError("accessing Slicer wiki", "error parsing wiki page")
+      return False
+    beginTableIndex = byteArray.indexOf(beginTableString)
+    endTableIndex = byteArray.indexOf(endTableString)    
+    if (beginTableIndex == -1 or endTableIndex == -1):
+      self.reportError("accessing Slicer wiki", "error parsing wiki page")
+      return False
+    tableArray = byteArray.mid(beginTableIndex, endTableIndex-beginTableIndex+len(endTableString))
+
+    # Parse the rows from the wiki page
+    beginRowString = "<tr"
+    endRowString = "/tr>"
+    numRows = tableArray.count(beginRowString)
+    if (numRows != tableArray.count(endRowString) or numRows <= 1):
+      self.reportError("accessing Slicer wiki", "error parsing wiki page")
+      return False
+
+    self.sampleNames = []
+    self.sampleLinks = []
+    self.sampleIconLinks = {}
+    self.numSamples = 0
+
+    for i in range(0, numRows):
+      beginRowIndex = tableArray.indexOf(beginRowString)
+      endRowIndex = tableArray.indexOf(endRowString)
+
+      if (beginRowIndex == -1 or endRowIndex == -1):
+        self.reportError("accessing Slicer wiki", "error parsing wiki page")
+        return False
+
+      rowArray = tableArray.mid(beginRowIndex, endRowIndex-beginRowIndex+len(endRowString))
+      tableArray = tableArray.right(tableArray.length()-endRowIndex-len(endRowString))
+
+      # Create a list containing tuples of sample name, the data, and the screenshot
+      # The first row is the table header, so ignore it
+      if i != 0:
+        beginDataString = "<a href"
+        endDataString = "/a>"
+
+        expectedNumData = 2
+        if (rowArray.count(beginDataString) != expectedNumData or rowArray.count(endDataString) != expectedNumData):
+          self.reportError("accessing Slicer wiki", "error parsing wiki page")
+          return False
+
+        # Extract the link to the data
+        beginDataIndex = rowArray.indexOf(beginDataString)
+        endDataIndex = rowArray.indexOf(endDataString)	
+        dataArray = rowArray.mid(beginDataIndex, endDataIndex-beginDataIndex+len(endDataString))
+        rowArray = rowArray.right(rowArray.length()-endDataIndex-len(endDataString))
+
+        beginLinkString = "href=\""
+        endLinkString = "\""
+        beginLinkIndex = dataArray.indexOf(beginLinkString)
+        endLinkIndex = dataArray.indexOf(endLinkString, beginLinkIndex+len(beginLinkString))
+        linkArray = dataArray.mid(beginLinkIndex+len(beginLinkString), endLinkIndex-beginLinkIndex-len(beginLinkString))
+
+        # Extract the name of the data
+        beginNameString = ">"
+        endNameString = "</a>"
+        endNameIndex = dataArray.lastIndexOf(endNameString)
+        beginNameIndex = dataArray.lastIndexOf(beginNameString, endNameIndex-len(endNameString))
+	nameArray = dataArray.mid(beginNameIndex+len(beginNameString), endNameIndex-beginNameIndex-len(beginNameString))
+
+        # Extract the screenshot icon
+        beginIconString = "src=\""
+        endIconString = "\""
+        beginIconIndex = rowArray.indexOf(beginIconString)
+        endIconIndex = rowArray.indexOf(endIconString, beginIconIndex+len(beginIconString))
+        iconArray = rowArray.mid(beginIconIndex+len(beginIconString), endIconIndex-beginIconIndex-len(beginIconString))
+        iconUrl = "http://www.slicer.org" + iconArray.data()
+        
+        # Add to the list
+        self.sampleNames.append(nameArray.data())
+        self.sampleLinks.append(linkArray.data())
+        iconIndex = self.numSamples + 2 # compensate for explanation text and separator
+        if iconUrl in self.sampleIconLinks:
+          self.sampleIconLinks[iconUrl].append(iconIndex)
+        else:
+          self.sampleIconLinks[iconUrl] = [iconIndex]
+        self.numSamples = self.numSamples + 1
+    return True
+    
+  def handleIcon(self, reply):
+    if self.networkReplyHasErrors("fetching sample data icon", reply):
+      return
+
+    image = qt.QImage()
+    image.loadFromData(reply.readAll())
+    icon = qt.QIcon(qt.QPixmap().fromImage(image))
+    for index in self.sampleIconLinks[reply.url().toString()]:
+      self.sampleComboBox.setItemIcon(index, icon)
+    
+  def reportError(self, task, infoString):
+    self.log.insertHtml('<p>Error %s: <i>%s</i>\n' % (task, infoString))
+    self.log.insertPlainText('\n')
+
+  def networkReplyHasErrors(self, task, reply):
+    if reply.error() != qt.QNetworkReply.NoError:
+      self.reportError(task, reply.errorString())
+      return True
+    return False
+
+  def onAuthenticationRequired(self, reply, authenticator):
+    self.reportError("Authentication required") # TODO can recover?
+
+  def onProxyAuthenticationRequired(self, proxy, authenticator):
+    self.reportError("Proxy authentication required") # TODO can recover?
+
+  def downloadVolume(self, index):
+    # Compensate for first two entries in the combobox (explanation text and separator)
+    index = index - 2  
+    if index >= self.numSamples or index < 0:
+      return
+
+    # get the name and uri
+    name = self.sampleNames[index]
+    uri = self.sampleLinks[index]
+    if (not name or not uri):
+      return
+
+    # start the download
     self.log.insertHtml('<b>Requesting download</b> <i>%s</i> from %s...\n' % (name,uri))
     self.log.repaint()
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
@@ -133,11 +303,13 @@ class SampleDataWidget:
       self.log.insertHtml('<i>finished.</i>\n')
       self.log.insertPlainText('\n')
       self.log.repaint()
+      self.processStorageEvents(storageNode, 'ModifiedEvent')
     else:
       self.log.insertHtml('<b>Download failed!</b>\n')
       self.log.insertPlainText('\n')
       self.log.repaint()
-    self.processStorageEvents(storageNode, 'ModifiedEvent')
+    # Reset back to the explanation text
+    self.sampleComboBox.setCurrentIndex(0)
 
   def processStorageEvents(self, node, event):
     state = node.GetReadStateAsString()
