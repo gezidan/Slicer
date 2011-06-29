@@ -52,6 +52,8 @@
 #include "qSlicerSettingsPythonPanel.h"
 #endif
 
+#include "qSlicerSettingsRemoteDataPanel.h"
+
 // qMRML includes
 #include <qMRMLSliceWidget.h>
 
@@ -285,6 +287,7 @@ void qSlicerMainWindowPrivate::setupUi(QMainWindow * mainWindow)
   this->SettingsDialog->addPanel("Modules settings", settingsModulesPanel);
 #ifdef Slicer_USE_PYTHONQT
   this->SettingsDialog->addPanel("Python settings", new qSlicerSettingsPythonPanel);
+  this->SettingsDialog->addPanel("Remote data settings", new qSlicerSettingsRemoteDataPanel);
 #endif
   settingsModulesPanel->setRestartRequested(false);
   QObject::connect(this->SettingsDialog, SIGNAL(accepted()), q, SLOT(onSettingDialogAccepted()));

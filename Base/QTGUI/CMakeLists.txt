@@ -75,6 +75,8 @@ set(KIT_SRCS
   qSlicerSettingsModulesPanel.h
   qSlicerSettingsGeneralPanel.cxx
   qSlicerSettingsGeneralPanel.h
+  qSlicerSettingsRemoteDataPanel.cxx
+  qSlicerSettingsRemoteDataPanel.h
   qSlicerStyle.cxx
   qSlicerStyle.h
   qSlicerWidget.cxx
@@ -138,6 +140,7 @@ set(KIT_MOC_SRCS
   qSlicerSaveDataDialog_p.h
   qSlicerSettingsModulesPanel.h
   qSlicerSettingsGeneralPanel.h
+  qSlicerSettingsRemoteDataPanel.h
   qSlicerWidget.h
   )
 
@@ -163,6 +166,7 @@ set(KIT_UI_SRCS
   Resources/UI/qSlicerSaveDataDialog.ui
   Resources/UI/qSlicerSettingsModulesPanel.ui
   Resources/UI/qSlicerSettingsGeneralPanel.ui
+  Resources/UI/qSlicerSettingsRemoteDataPanel.ui
 )
 
 # PythonQt decorator
