@@ -12,7 +12,7 @@ class SampleData:
     parent.category = "Informatics"
     parent.contributor = "Steve Pieper and Danielle Pace"
     parent.helpText = """
-The SampleData module can be used to download data for working with in slicer.  Use of this module requires an active network connection.  Sample data is downloaded from <a>href=http://www.slicer.org/slicerWiki/index.php/SampleData> into the cache directory specified in the application settings under Remote Data Settings.
+The SampleData module can be used to download data for working with in slicer.  Use of this module requires an active network connection.  Sample data is downloaded from <a>href=http://www.slicer.org/slicerWiki/index.php/SampleData> into the cache directory specified in the application settings under Remote Data Settings.  If the wiki page is unavailable, previously downloaded and cached sample data can still be loaded using this module.
     """
     parent.acknowledgementText = """
 This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. See <a>http://www.slicer.org</a> for details.  Module implemented by Steve Pieper and Danielle Pace.
@@ -99,7 +99,7 @@ class SampleDataWidget:
     dataFormLayout.addRow("Data:", self.sampleComboBox)
 
     # Add refresh button
-    self.refreshButton = qt.QPushButton("Refresh")
+    self.refreshButton = qt.QPushButton("Refresh list")
     self.refreshButton.connect('clicked()', self.updateGUIFromWeb)
     dataFormLayout.addRow(self.refreshButton)
 
@@ -119,6 +119,10 @@ class SampleDataWidget:
   def initiateDownload(self, uri):
     # Triggers call to onNetworkResult()
     reply = self.manager.get(qt.QNetworkRequest(qt.QNetworkRequest(qt.QUrl(uri))))
+    # If the initial reply has errors, the finished signal will never get emitted, so get around that here
+    # The onNetworkResult function will test again for errors and trigger reading from cache
+    if self.networkReplyHasErrors(reply):
+      self.onNetworkResult(reply)
 
   def updateGUIFromWeb(self):
     self.reportStatus("<b>Retrieving sample data information from Slicer wiki</b>")
@@ -142,37 +146,105 @@ class SampleDataWidget:
       self.sampleComboBox.addItem('Download %s' % name)
 
   def setSampleDataWidgetIcon(self, image, uri):
+    # Set the icons
     icon = qt.QIcon(qt.QPixmap().fromImage(image))
-    for index in self.sampleIconLinks[uri]:
+    for sampleName in self.sampleIconLinks[uri]:
+      index = self.sampleNames.index(sampleName) + 2
       self.sampleComboBox.setItemIcon(index, icon)
+    
+    # Save the image to the cache so we don't need to download it next time
+    filename = slicer.mrmlScene.GetCacheManager().GetFilenameFromURI(uri)
+    image.save(filename)
 
+  def saveSampleDataInformation(self):
+    # Automatically inherits application name, filename, etc, from Slicer!
+    settings = qt.QSettings()
+
+    # Save out to Slicer's settings file
+    settings.setValue("SampleData/NumSamples", self.numSamples)
+    settings.setValue("SampleData/SampleNames", self.sampleNames)
+    settings.setValue("SampleData/SampleLinks", self.sampleLinks)
+    settings.setValue("SampleData/SampleIconLinks", self.sampleIconLinks)
+
+  def tupleToList(self, tup):
+    l = []
+    for i in range(0, len(tup)):
+      l.append(tup[i])
+    return l
+
+  def dictionaryValuesTupleToList(self, dictionary):
+    for key, value in dictionary.iteritems():
+      dictionary[key] = self.tupleToList(value)
+    return dictionary
+
+  def readSavedSampleDataInformation(self):
+    # Automatically inherits application name, filename, etc, from Slicer!
+    settings = qt.QSettings()
+ 
+    # Read from Slicer's settings file
+    tempNumSamples = int(settings.value("SampleData/NumSamples"))
+    tempSampleNames = self.tupleToList(settings.value("SampleData/SampleNames"))
+    tempSampleLinks = self.tupleToList(settings.value("SampleData/SampleLinks"))
+    tempSampleIconLinks = self.dictionaryValuesTupleToList(settings.value("SampleData/SampleIconLinks"))
+
+    self.numSamples = 0
+    self.sampleNames = []
+    self.sampleLinks = []
+    self.sampleIconLinks = {}
+
+    # Remove sample data that we don't have cached images for (we don't care about the screenshots though)
+    for i in range(0, tempNumSamples):
+      filename = slicer.mrmlScene.GetCacheManager().GetFilenameFromURI(tempSampleLinks[i])
+      if slicer.mrmlScene.GetCacheManager().LocalFileExists(filename):
+        self.numSamples = self.numSamples + 1
+        self.sampleNames.append(tempSampleNames[i])
+        self.sampleLinks.append(tempSampleLinks[i])
+        for key, value in tempSampleIconLinks.iteritems():
+          if value.count(tempSampleNames[i]) != 0:
+            if key in self.sampleIconLinks:
+              self.sampleIconLinks[key].append(tempSampleNames[i])
+            else:
+              self.sampleIconLinks[key] = [tempSampleNames[i]]
+  
   def handleSampleDataInformation(self, reply):
-    if self.networkReplyHasErrors("accessing Slicer wiki", reply):
+    # Try to parse the table from the wiki page (there should only be one)
+    success = self.parseWikiPage(reply)
+
+    if success:
+      self.reportStatus("Sample data information successfully retrieved from wiki page")
+      self.saveSampleDataInformation()
+    else:
+      self.reportStatus("Reading cached sample data information")
+      self.readSavedSampleDataInformation()
+
+    if self.numSamples == 0:
+      self.reportError("reading sample data information", "no sample data found")
+      return
+    elif len(self.sampleNames) != self.numSamples or len(self.sampleLinks) != self.numSamples or len(self.sampleIconLinks) != self.numSamples:
+      self.reportError("reading sample data information", "some sample data is missing")
       return
 
-    # Get the wiki page
-    byteArray = reply.readAll()
-    if (byteArray.size() == 0):
-      self.reportError("accessing Slicer wiki", "error reading wiki page")
-      return
-
-    # Parse the table from the wiki page (there should only be one)
-    success = self.parseWikiPage(byteArray)
-    if not success:
-      return
-
-    # Clear the combobox and re-add the header and separator
+    # Add the items to the sample data combobox
     self.populateSampleDataWidget()
 
-    self.reportStatus("Sample data information successfully retrieved")
-
-    # Trigger downloading the screenshots
+    # Get the screenshots from the wiki
     for iconUrl in self.sampleIconLinks.keys():
       self.initiateDownload(iconUrl)
 
     self.reportStatus("Idle")
 
-  def parseWikiPage(self, byteArray):
+  def parseWikiPage(self, reply):
+
+    if self.networkReplyHasErrors(reply):
+      self.reportError("accessing Slicer wiki", reply.errorString())
+      return False
+
+    # Get the wiki page
+    byteArray = reply.readAll()
+    if (byteArray.size() == 0):
+      self.reportError("accessing Slicer wiki", "error reading wiki page")
+      return False
+
     # Extract the table
     beginTableString = "<table"
     endTableString = "/table>"
@@ -251,16 +323,23 @@ class SampleDataWidget:
         # Add to the list
         self.sampleNames.append(nameArray.data())
         self.sampleLinks.append(linkArray.data())
-        iconIndex = self.numSamples + 2 # compensate for explanation text and separator
         if iconUrl in self.sampleIconLinks:
-          self.sampleIconLinks[iconUrl].append(iconIndex)
+          self.sampleIconLinks[iconUrl].append(nameArray.data())
         else:
-          self.sampleIconLinks[iconUrl] = [iconIndex]
+          self.sampleIconLinks[iconUrl] = [nameArray.data()]
         self.numSamples = self.numSamples + 1
     return True
     
   def handleIcon(self, reply):
-    if self.networkReplyHasErrors("fetching sample data icon", reply):
+    if self.networkReplyHasErrors(reply):
+      # Try to get the screenshot from the cache if we can't get it from the web
+      iconUrl = reply.url().toString()
+      filename = slicer.mrmlScene.GetCacheManager().GetFilenameFromURI(iconUrl)
+      if slicer.mrmlScene.GetCacheManager().LocalFileExists(filename):
+        image = qt.QImage(filename)
+        self.setSampleDataWidgetIcon(image, iconUrl)
+      else:
+        self.reportError("fetching sample data icon", reply.errorString())
       return
 
     image = qt.QImage()
@@ -277,9 +356,8 @@ class SampleDataWidget:
     self.log.insertHtml('<p>Error %s: <i>%s</i>\n' % (task, infoString))
     self.log.insertPlainText('\n')
 
-  def networkReplyHasErrors(self, task, reply):
+  def networkReplyHasErrors(self, reply):
     if reply.error() != qt.QNetworkReply.NoError:
-      self.reportError(task, reply.errorString())
       return True
     return False
 
