@@ -12,7 +12,7 @@ class SampleData:
     parent.category = "Informatics"
     parent.contributor = "Steve Pieper and Danielle Pace"
     parent.helpText = """
-The SampleData module can be used to download data for working with in slicer.  Use of this module requires an active network connection.  Sample data is downloaded from <a>http://www.slicer.org/slicerWiki/index.php/SampleData</a> into the cache directory specified in the application settings under Remote Data Settings.
+The SampleData module can be used to download data for working with in slicer.  Use of this module requires an active network connection.  Sample data is downloaded from <a>href=http://www.slicer.org/slicerWiki/index.php/SampleData> into the cache directory specified in the application settings under Remote Data Settings.
     """
     parent.acknowledgementText = """
 This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. See <a>http://www.slicer.org</a> for details.  Module implemented by Steve Pieper and Danielle Pace.
@@ -87,34 +87,42 @@ class SampleDataWidget:
     pass
 
   def setup(self):
+    # Sample data collapsible button
+    dataCollapsibleButton = ctk.ctkCollapsibleButton()
+    dataCollapsibleButton.text = "SampleData"
+    self.layout.addWidget(dataCollapsibleButton)
+    dataFormLayout = qt.QFormLayout(dataCollapsibleButton)
+
     # Add combobox to select sample data to download
     self.sampleComboBox = qt.QComboBox()
-    self.sampleComboBox.addItem('Select sample data to download...')
-    self.sampleComboBox.insertSeparator(1)
-    self.layout.addWidget(self.sampleComboBox)
     self.sampleComboBox.connect('currentIndexChanged(int)', self.downloadVolume)
+    dataFormLayout.addRow("Data:", self.sampleComboBox)
 
     # Add refresh button
     self.refreshButton = qt.QPushButton("Refresh")
-    self.layout.addWidget(self.refreshButton)
     self.refreshButton.connect('clicked()', self.updateGUIFromWeb)
+    dataFormLayout.addRow(self.refreshButton)
+
+    # Status collapsible button
+    statusCollapsibleButton = ctk.ctkCollapsibleButton()
+    statusCollapsibleButton.text = "Status"
+    self.layout.addWidget(statusCollapsibleButton)
+    statusLayout = qt.QVBoxLayout(statusCollapsibleButton)
 
     # Add status section
-    self.log = qt.QTextEdit()
-    self.layout.addWidget(self.log)
-
-    # Add spacer to layout
-    self.layout.addStretch(1)
+    self.log = qt.QTextBrowser()
+    statusLayout.addWidget(self.log)
 
     # Fetch the sample data information and populate the sampleComboBox
     self.updateGUIFromWeb()
 
-  def updateGUIFromWeb(self):
-    self.log.insertHtml('<p>Status: <i>Retrieving sample data information from Slicer wiki</i>\n')
-    self.log.insertPlainText('\n')
-
+  def initiateDownload(self, uri):
     # Triggers call to onNetworkResult()
-    self.manager.get(qt.QNetworkRequest(qt.QUrl(self.sampleDataPage)))
+    reply = self.manager.get(qt.QNetworkRequest(qt.QNetworkRequest(qt.QUrl(uri))))
+
+  def updateGUIFromWeb(self):
+    self.reportStatus("<b>Retrieving sample data information from Slicer wiki</b>")
+    self.initiateDownload(self.sampleDataPage)
 
   def onNetworkResult(self, reply):
     # Error handling taken care of by the functions called here.
@@ -123,6 +131,20 @@ class SampleDataWidget:
       self.handleSampleDataInformation(reply)
     else:
       self.handleIcon(reply)
+
+  def populateSampleDataWidget(self):
+    self.sampleComboBox.clear()
+    self.sampleComboBox.addItem('Select sample data to download...')
+    self.sampleComboBox.insertSeparator(1)
+
+    # Add combobox to select sample data to download (starting with blank screenshot icons in case the icons cannot be downloaded)
+    for name in self.sampleNames:
+      self.sampleComboBox.addItem('Download %s' % name)
+
+  def setSampleDataWidgetIcon(self, image, uri):
+    icon = qt.QIcon(qt.QPixmap().fromImage(image))
+    for index in self.sampleIconLinks[uri]:
+      self.sampleComboBox.setItemIcon(index, icon)
 
   def handleSampleDataInformation(self, reply):
     if self.networkReplyHasErrors("accessing Slicer wiki", reply):
@@ -140,23 +162,15 @@ class SampleDataWidget:
       return
 
     # Clear the combobox and re-add the header and separator
-    self.sampleComboBox.clear()
-    self.sampleComboBox.addItem('Select sample data to download...')
-    self.sampleComboBox.insertSeparator(1)
+    self.populateSampleDataWidget()
 
-    # Add combobox to select sample data to download (starting with blank screenshot icons in case they cannot be downloaded)
-    for name in self.sampleNames:
-      self.sampleComboBox.addItem('Download %s' % name)
-
-    self.log.insertHtml('<p>Status: <i>Sample data information successfully retrieved</i>\n')
-    self.log.insertPlainText('\n')
+    self.reportStatus("Sample data information successfully retrieved")
 
     # Trigger downloading the screenshots
     for iconUrl in self.sampleIconLinks.keys():
-      self.manager.get(qt.QNetworkRequest(qt.QUrl(iconUrl)))
+      self.initiateDownload(iconUrl)
 
-    self.log.insertHtml('<p>Status: <i>Idle</i>\n')
-    self.log.insertPlainText('\n')
+    self.reportStatus("Idle")
 
   def parseWikiPage(self, byteArray):
     # Extract the table
@@ -251,9 +265,13 @@ class SampleDataWidget:
 
     image = qt.QImage()
     image.loadFromData(reply.readAll())
-    icon = qt.QIcon(qt.QPixmap().fromImage(image))
-    for index in self.sampleIconLinks[reply.url().toString()]:
-      self.sampleComboBox.setItemIcon(index, icon)
+    self.setSampleDataWidgetIcon(image, reply.url().toString())
+
+  def reportStatus(self, infoString):
+    self.log.insertHtml('<p>Status: <i>%s</i>\n' % infoString)
+    self.log.insertPlainText('\n')
+    scrollBar = self.log.verticalScrollBar()
+    scrollBar.setValue(scrollBar.maximum)
     
   def reportError(self, task, infoString):
     self.log.insertHtml('<p>Error %s: <i>%s</i>\n' % (task, infoString))
@@ -284,7 +302,7 @@ class SampleDataWidget:
       return
 
     # start the download
-    self.log.insertHtml('<b>Requesting download</b> <i>%s</i> from %s...\n' % (name,uri))
+    self.reportStatus('<b>Requesting download</b> <i>%s</i> from %s...' % (name,uri))
     self.log.repaint()
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
     vl = slicer.modules.volumes.logic()
@@ -293,20 +311,17 @@ class SampleDataWidget:
       storageNode = volumeNode.GetStorageNode()
       storageNode.AddObserver('ModifiedEvent', self.processStorageEvents)
       # Automatically select the volume to display
-      self.log.insertHtml('<i>Displaying...</i>')
-      self.log.insertPlainText('\n')
+      self.reportStatus("Displaying...")
       self.log.repaint()
       mrmlLogic = slicer.app.mrmlApplicationLogic()
       selNode = mrmlLogic.GetSelectionNode()
       selNode.SetReferenceActiveVolumeID(volumeNode.GetID())
       mrmlLogic.PropagateVolumeSelection(1)
-      self.log.insertHtml('<i>finished.</i>\n')
-      self.log.insertPlainText('\n')
+      self.reportStatus("Finished")
       self.log.repaint()
       self.processStorageEvents(storageNode, 'ModifiedEvent')
     else:
-      self.log.insertHtml('<b>Download failed!</b>\n')
-      self.log.insertPlainText('\n')
+      self.reportStatus('<b>Download failed!</b>')
       self.log.repaint()
     # Reset back to the explanation text
     self.sampleComboBox.setCurrentIndex(0)
@@ -314,14 +329,11 @@ class SampleDataWidget:
   def processStorageEvents(self, node, event):
     state = node.GetReadStateAsString()
     if state == 'TransferDone':
-      self.log.insertHtml('<i>Transfer Done</i>\n')
-      self.log.insertPlainText('\n\n')
-      self.log.insertHtml('Status: <b>Idle</b>\n')
-      self.log.insertPlainText('\n')
+      self.reportStatus("Transfer done")
+      self.reportStatus("Idle")
       node.RemoveObserver('ModifiedEvent', self.processStorageEvents)
     else:
-      self.log.insertHtml('Status: <i>%s</i>\n' % state)
-      self.log.insertPlainText('\n')
+      self.reportStatus(state)
     self.log.repaint()
     slicer.app.processEvents(qt.QEventLoop.ExcludeUserInputEvents)
 
