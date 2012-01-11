@@ -314,8 +314,11 @@ qSlicerAbstractCoreModule* qSlicerModuleFactoryManager::instantiateModule(const 
 void qSlicerModuleFactoryManager::uninstantiateModule(const QString& name)
 {
   Q_D(qSlicerModuleFactoryManager);
-  qDebug() << "Uninstantiating:" << name;
-  d->uninstantiateModule(name);
+  if (this->isRegistered(name) && this->isInstantiated(name))
+    {
+    qDebug() << "Uninstantiating:" << name;
+    d->uninstantiateModule(name);
+    }
 }
 
 //-----------------------------------------------------------------------------

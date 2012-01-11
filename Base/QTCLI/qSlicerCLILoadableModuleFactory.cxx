@@ -76,7 +76,10 @@ qSlicerAbstractCoreModule* qSlicerCLILoadableModuleFactoryItem::instanciator()
   module->setEntryPoint(QString(buffer));
   module->setModuleType("SharedObjectModule");
 
-  module->setXmlModuleDescription(QString(xmlDescription));
+  if (!module->setXmlModuleDescription(QString(xmlDescription)))
+    {
+    return 0;
+    }
   module->setTempDirectory(this->TempDirectory);
   module->setPath(this->path());
   module->setInstalled(qSlicerCLIModuleFactoryHelper::isInstalled(this->path()));

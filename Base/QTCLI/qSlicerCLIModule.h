@@ -46,7 +46,7 @@ public:
   /// 
   /// Assign the module XML description.
   /// Note: That will also trigger the parsing of the XML structure
-  void setXmlModuleDescription(const QString& xmlModuleDescription);
+  bool setXmlModuleDescription(const QString& xmlModuleDescription);
 
   /// Optionally set in the module XML description
   virtual int index() const;

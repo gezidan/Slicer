@@ -148,7 +148,6 @@ bool qSlicerModuleManager::loadModule(const QString& name)
 
   // Retrieve module title
   QString _moduleTitle = d->ModuleFactoryManager.moduleTitle(name);
-  Q_ASSERT(!_moduleTitle.isEmpty());
   if (_moduleTitle.isEmpty())
     {
     qWarning() << "Failed to retrieve module title corresponding to module name: " << name;

@@ -129,7 +129,7 @@ CTK_SET_CPP(qSlicerCLIModule, const QString&, setModuleType, ModuleType);
 CTK_GET_CPP(qSlicerCLIModule, QString, moduleType, ModuleType);
 
 //-----------------------------------------------------------------------------
-void qSlicerCLIModule::setXmlModuleDescription(const QString& xmlModuleDescription)
+bool qSlicerCLIModule::setXmlModuleDescription(const QString& xmlModuleDescription)
 {
   Q_D(qSlicerCLIModule);
   //qDebug() << "xmlModuleDescription:" << xmlModuleDescription;
@@ -142,7 +142,7 @@ void qSlicerCLIModule::setXmlModuleDescription(const QString& xmlModuleDescripti
     {
     qWarning() << "Failed to parse xml module description:\n"
                << xmlModuleDescription;
-    return;
+    return false;
     }
 
   // Set properties
@@ -176,6 +176,8 @@ void qSlicerCLIModule::setXmlModuleDescription(const QString& xmlModuleDescripti
   desc.SetTarget(this->entryPoint().toStdString());
 
   d->Desc = desc; 
+
+  return true;
 }
 
 //-----------------------------------------------------------------------------

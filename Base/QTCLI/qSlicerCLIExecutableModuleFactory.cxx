@@ -90,7 +90,10 @@ qSlicerAbstractCoreModule* qSlicerCLIExecutableModuleFactoryItem::instanciator()
     xmlDescription.remove(0, xmlDescription.indexOf("<?xml"));
     }
 
-  module->setXmlModuleDescription(xmlDescription.toLatin1());
+  if (!module->setXmlModuleDescription(xmlDescription.toLatin1()))
+    {
+    return 0;
+    }
   module->setTempDirectory(this->TempDirectory);
   module->setPath(this->path());
   module->setInstalled(qSlicerCLIModuleFactoryHelper::isInstalled(this->path()));
